@@ -90,6 +90,25 @@ meta, err := s3.Read(ctx, "dados/metadata.json")
 objects, err := s3.List(ctx, "dados/")
 ```
 
+## Publicar um lote: `sync` com manifesto por último
+
+O que os scripts de publicação fazem na mão (subir o que mudou, manifesto no
+fim), o `sync` faz por ETag, nas quatro linguagens e na CLI:
+
+```r
+sync_up_s3("output/painel", "s3://iaempe/etl/", last = "manifest.json")
+```
+
+```bash
+s3pe sync output/painel s3://iaempe/etl/ --last manifest.json
+s3pe sync s3://iaempe/dados/ ./dados-local          # espelho local do lote
+```
+
+Arquivos grandes sobem em partes automaticamente (acima de 64 MiB). Para
+compartilhar um objeto com quem não tem credencial:
+`presign_s3("etl/painel_iaempe.parquet", expires = 3600)` gera um link
+temporário.
+
 ## Linha de comando
 
 ```bash

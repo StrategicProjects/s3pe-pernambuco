@@ -197,6 +197,14 @@ _, err = s3.<span class="c-cmd">Download</span>(ctx,
     <span class="c-str">"s3://horizonte-fiscal/series/estado/icms.csv.gz"</span>, <span class="c-str">"icms.csv.gz"</span>)
 <span class="c-kw">if</span> errors.<span class="c-cmd">Is</span>(err, s3pe.ErrNotFound) { <span class="c-cmt">/* ... */</span> }</code></pre></div></div>
       </div>
+      <div class="panel" style="margin-top:18px"><h4>Publicar um lote · sync com manifesto por último (R e shell)</h4>
+<pre><code><span class="c-cmd">sync_up_s3</span>(<span class="c-str">"output/painel"</span>, <span class="c-str">"s3://iaempe/etl/"</span>, last = <span class="c-str">"manifest.json"</span>)
+<span class="c-ok">✔ sync output/painel → s3://iaempe/etl/: 3 uploaded, 28 unchanged, 0 deleted (2.1 s)</span>
+<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> sync output/painel s3://iaempe/etl/ --last manifest.json
+<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> sync s3://iaempe/dados/ ./dados-local      <span class="c-cmt"># espelho local do lote</span>
+<span class="c-cmt"># link temporário para quem não tem credencial</span>
+<span class="c-cmd">presign_s3</span>(<span class="c-str">"etl/painel_iaempe.parquet"</span>, expires = <span class="c-flag">3600</span>)</code></pre>
+      </div>
       <div class="panel" style="margin-top:18px"><h4>Linha de comando · cargo install s3pe</h4>
 <pre><code><span class="c-prompt">$</span> <span class="c-cmd">export</span> S3PE_ENDPOINT=https://s3.pe.gov.br
 <span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> buckets
