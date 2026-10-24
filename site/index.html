@@ -133,6 +133,7 @@ AWS_SECRET_ACCESS_KEY=...
         <tbody>
           <tr><td><code>iaempe</code></td><td><code>dados/</code>: os JSON e GeoJSON do dashboard do IAEM-PE (séries, ranking, municípios)<br><code>etl/</code>: <code>painel_iaempe.parquet</code>, <code>catalogo_iaempe.parquet</code></td><td><code>dados/metadata.json</code> (<code>ultimo_mes</code>)<br><code>etl/manifest.json</code></td></tr>
           <tr><td><code>horizonte-fiscal</code></td><td><code>series/estado/&lt;codigo&gt;.csv.gz</code> (Estado e macro), <code>series/municipios/&lt;ibge&gt;/&lt;codigo&gt;.csv.gz</code><br><code>previsoes/&lt;ibge&gt;/&lt;codigo&gt;/ultima.json</code> e <code>&lt;AAAA-MM-DD&gt;.json</code></td><td><code>manifest.json</code> (<code>gerado_em</code>, lista de séries)</td></tr>
+          <tr><td><code>sds</code></td><td>bucket do projeto SDS, criado em 2026-10-24 para testes com o s3pe; sem layout definido ainda. Chaves <code>sds</code> (leitura e escrita) e <code>sds-leitura</code>.</td><td>a definir</td></tr>
         </tbody>
       </table></div>
       <p class="note">Séries do Horizonte Fiscal: CSV gzip com <code>competencia,valor,origem,previa</code>, uma linha por mês. Códigos (<code>icms</code>, <code>fpe</code>, <code>fpm</code>, <code>ipca</code>, …) e unidades estão no manifesto. O código IBGE do Estado é 26; municípios têm 7 dígitos (Recife, 2611606).</p>

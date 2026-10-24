@@ -28,6 +28,7 @@ plataforma o endpoint é local: `S3PE_ENDPOINT=http://127.0.0.1:9003`.
 |---|---|---|
 | `iaempe` | o lote do dashboard do IAEM-PE sob `dados/` (JSON e GeoJSON, `metadata.json` por último) e o painel do ETL sob `etl/` (Parquet, `manifest.json` por último) | `iaempe-leitura` |
 | `horizonte-fiscal` | séries fiscais sob `series/estado/<codigo>.csv.gz` e `series/municipios/<ibge>/<codigo>.csv.gz`, previsões sob `previsoes/<ibge>/<codigo>/ultima.json`, `manifest.json` por último | `horizonte-fiscal-leitura` |
+| `sds` | bucket do projeto SDS, criado em 2026-10-24 para testes com o s3pe; sem layout definido ainda | `sds-leitura` (leitura) e `sds` (leitura e escrita) |
 
 **Regra do manifesto:** o `metadata.json` / `manifest.json` é sempre o
 último objeto a subir. Se a data dele é T, tudo o que ele lista já estava
