@@ -4,9 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>s3pe no s3.pe.gov.br — exemplos em R, Python, Rust, Go e shell</title>
-<meta name="description" content="Como ler e gravar dados no s3.pe.gov.br, o armazenamento de objetos S3 da plataforma Condepe/Fidem de Pernambuco, com o pacote s3pe em R, Python, Rust, Go e linha de comando." />
+<meta name="description" content="Como ler e gravar dados no s3.pe.gov.br, o armazenamento de objetos S3 da plataforma Condepe/Fidem de Pernambuco, com o pacote s3pe em R, Python, Rust, Go e linha de comando. Credenciais, regra do manifesto e exemplos." />
 <meta property="og:title" content="s3pe no s3.pe.gov.br" />
-<meta property="og:description" content="Credenciais, buckets publicados, regra do manifesto e exemplos nas quatro linguagens." />
+<meta property="og:description" content="Credenciais, regra do manifesto e exemplos nas quatro linguagens." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://strategicprojects.github.io/s3pe-pernambuco/" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B5%3C/text%3E%3C/svg%3E" />
@@ -86,16 +86,16 @@
         <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">R</span></div>
 <pre><code><span class="c-kw">library</span>(s3pe)
 <span class="c-cmd">use_endpoint</span>(<span class="c-str">"https://s3.pe.gov.br"</span>)
-<span class="c-cmd">use_bucket</span>(<span class="c-str">"iaempe"</span>)
-<span class="c-ok">✔ Default bucket: s3://iaempe/</span>
+<span class="c-cmd">use_bucket</span>(<span class="c-str">"meu-bucket"</span>)
+<span class="c-ok">✔ Default bucket: s3://meu-bucket/</span>
 
-meta &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"dados/metadata.json"</span>)
-<span class="c-ok">↓ s3://iaempe/dados/metadata.json (1.2 kB, 0.2 s)</span>
-meta$ultimo_mes
-<span class="c-cmt">#&gt; [1] 202608</span>
+meta &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"dados/manifesto.json"</span>)
+<span class="c-ok">↓ s3://meu-bucket/dados/manifesto.json (1.2 kB, 0.2 s)</span>
+meta$gerado_em
+<span class="c-cmt">#&gt; [1] "2026-10-23T07:05:12Z"</span>
 
-icms &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/series/estado/icms.csv.gz"</span>)
-<span class="c-ok">↓ s3://horizonte-fiscal/series/estado/icms.csv.gz (4.1 kB, 0.2 s)</span></code></pre>
+icms &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://outro-bucket/series/icms.csv.gz"</span>)
+<span class="c-ok">↓ s3://outro-bucket/series/icms.csv.gz (4.1 kB, 0.2 s)</span></code></pre>
       </div>
     </div>
   </section>
@@ -110,7 +110,7 @@ icms &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizont
 <pre><code>S3PE_ENDPOINT=https://s3.pe.gov.br
 AWS_ACCESS_KEY_ID=GK...
 AWS_SECRET_ACCESS_KEY=...
-<span class="c-cmt"># S3PE_BUCKET=iaempe             opcional: chaves sem s3://</span>
+<span class="c-cmt"># S3PE_BUCKET=meu-bucket             opcional: chaves sem s3://</span>
 <span class="c-cmt"># dentro do servidor da plataforma:</span>
 <span class="c-cmt"># S3PE_ENDPOINT=http://127.0.0.1:9003</span></code></pre>
           </div>
@@ -126,17 +126,12 @@ AWS_SECRET_ACCESS_KEY=...
 
   <section id="buckets">
     <div class="wrap">
-      <h2>Buckets publicados</h2>
-      <p class="sub"><strong>Regra do manifesto:</strong> o <code>metadata.json</code> ou <code>manifest.json</code> é sempre o último objeto a subir. Se a data dele é T, tudo o que ele lista já estava no bucket em T. Leia-o primeiro, use a data como versão do lote e a lista dele em vez de listar o bucket.</p>
-      <div class="scroll"><table class="cmp">
-        <thead><tr><th>Bucket</th><th>Layout</th><th>Marcador de lote</th></tr></thead>
-        <tbody>
-          <tr><td><code>iaempe</code></td><td><code>dados/</code>: os JSON e GeoJSON do dashboard do IAEM-PE (séries, ranking, municípios)<br><code>etl/</code>: <code>painel_iaempe.parquet</code>, <code>catalogo_iaempe.parquet</code></td><td><code>dados/metadata.json</code> (<code>ultimo_mes</code>)<br><code>etl/manifest.json</code></td></tr>
-          <tr><td><code>horizonte-fiscal</code></td><td><code>series/estado/&lt;codigo&gt;.csv.gz</code> (Estado e macro), <code>series/municipios/&lt;ibge&gt;/&lt;codigo&gt;.csv.gz</code><br><code>previsoes/&lt;ibge&gt;/&lt;codigo&gt;/ultima.json</code> e <code>&lt;AAAA-MM-DD&gt;.json</code></td><td><code>manifest.json</code> (<code>gerado_em</code>, lista de séries)</td></tr>
-          <tr><td><code>sds</code></td><td>bucket do projeto SDS, criado em 2026-10-24 para testes com o s3pe; sem layout definido ainda. Chaves <code>sds</code> (leitura e escrita) e <code>sds-leitura</code>.</td><td>a definir</td></tr>
-        </tbody>
-      </table></div>
-      <p class="note">Séries do Horizonte Fiscal: CSV gzip com <code>competencia,valor,origem,previa</code>, uma linha por mês. Códigos (<code>icms</code>, <code>fpe</code>, <code>fpm</code>, <code>ipca</code>, …) e unidades estão no manifesto. O código IBGE do Estado é 26; municípios têm 7 dígitos (Recife, 2611606).</p>
+      <h2>Buckets</h2>
+      <p class="sub">Cada projeto tem o seu bucket e a sua chave (de leitura, ou de leitura e escrita), criados por quem administra a plataforma. Os nomes não aparecem aqui: peça o do seu projeto. Os exemplos usam <code>meu-bucket</code>.</p>
+      <div class="grid f2">
+        <div class="card"><div class="ic">📄</div><h3>Regra do manifesto</h3><p>Nos lotes publicados pela plataforma, o <code>manifest.json</code> (ou <code>metadata.json</code>) é sempre o último objeto a subir. Se a data dele é T, tudo o que ele lista já estava no bucket em T. Leia-o primeiro, use a data como versão do lote e a lista dele em vez de listar o bucket.</p></div>
+        <div class="card"><div class="ic">🗂️</div><h3>Prefixos</h3><p>Dentro do bucket, um prefixo por fluxo (<code>dados/</code> para o lote publicado, <code>etl/</code> para o processamento, um prefixo seu para o que você grava). Quem publica escreve no prefixo dele e não toca nos outros.</p></div>
+      </div>
     </div>
   </section>
 
@@ -148,19 +143,18 @@ AWS_SECRET_ACCESS_KEY=...
         <div><p class="lang">R · install.packages("s3pe")</p><div class="panel">
 <pre><code><span class="c-kw">library</span>(s3pe)
 <span class="c-cmd">use_endpoint</span>(<span class="c-str">"https://s3.pe.gov.br"</span>)
-<span class="c-cmd">use_bucket</span>(<span class="c-str">"iaempe"</span>)
+<span class="c-cmd">use_bucket</span>(<span class="c-str">"meu-bucket"</span>)
 
-meta       &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"dados/metadata.json"</span>)
+meta       &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"dados/manifesto.json"</span>)
 series     &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"dados/series.json"</span>)
-municipios &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"dados/pe_municipios.geojson"</span>)  <span class="c-cmt"># sf</span>
-painel     &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"etl/painel_iaempe.parquet"</span>)    <span class="c-cmt"># tibble</span>
+municipios &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"dados/municipios.geojson"</span>)  <span class="c-cmt"># sf</span>
+painel     &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"etl/painel.parquet"</span>)    <span class="c-cmt"># tibble</span>
 <span class="c-cmd">list_s3</span>(<span class="c-str">"dados/"</span>)
 
-<span class="c-cmt"># Horizonte Fiscal</span>
-manifest &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/manifest.json"</span>)
-icms &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/series/estado/icms.csv.gz"</span>)
-fpm  &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/series/municipios/2611606/fpm.csv.gz"</span>)
-prev &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/previsoes/26/icms/ultima.json"</span>)
+<span class="c-cmt"># chaves completas quando há mais de um bucket</span>
+manifest &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://outro-bucket/manifest.json"</span>)
+icms &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://outro-bucket/series/icms.csv.gz"</span>)
+prev &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://outro-bucket/previsoes/icms/ultima.json"</span>)
 
 <span class="c-cmt"># escrita: chave com permissão, num prefixo seu</span>
 <span class="c-cmd">write_s3</span>(painel, <span class="c-str">"nota_tecnica/painel.parquet"</span>)
@@ -168,52 +162,52 @@ prev &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizont
         <div><p class="lang">Python · pip install "s3pe[pandas]"</p><div class="panel">
 <pre><code><span class="c-kw">import</span> s3pe
 
-s3pe.<span class="c-cmd">configure</span>(endpoint=<span class="c-str">"https://s3.pe.gov.br"</span>, bucket=<span class="c-str">"iaempe"</span>)
-meta   = s3pe.<span class="c-cmd">read_s3</span>(<span class="c-str">"dados/metadata.json"</span>)        <span class="c-cmt"># dict</span>
-painel = s3pe.<span class="c-cmd">read_s3</span>(<span class="c-str">"etl/painel_iaempe.parquet"</span>)  <span class="c-cmt"># DataFrame</span>
-icms   = s3pe.<span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/series/estado/icms.csv.gz"</span>)
-prev   = s3pe.<span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/previsoes/26/icms/ultima.json"</span>)
+s3pe.<span class="c-cmd">configure</span>(endpoint=<span class="c-str">"https://s3.pe.gov.br"</span>, bucket=<span class="c-str">"meu-bucket"</span>)
+meta   = s3pe.<span class="c-cmd">read_s3</span>(<span class="c-str">"dados/manifesto.json"</span>)        <span class="c-cmt"># dict</span>
+painel = s3pe.<span class="c-cmd">read_s3</span>(<span class="c-str">"etl/painel.parquet"</span>)  <span class="c-cmt"># DataFrame</span>
+icms   = s3pe.<span class="c-cmd">read_s3</span>(<span class="c-str">"s3://outro-bucket/series/icms.csv.gz"</span>)
+prev   = s3pe.<span class="c-cmd">read_s3</span>(<span class="c-str">"s3://outro-bucket/previsoes/icms/ultima.json"</span>)
 
 s3pe.<span class="c-cmd">write_s3</span>(painel, <span class="c-str">"nota_tecnica/painel.csv"</span>)
-s3pe.<span class="c-cmd">download_s3</span>(<span class="c-str">"dados/pe_municipios.geojson"</span>, <span class="c-str">"pe.geojson"</span>)
+s3pe.<span class="c-cmd">download_s3</span>(<span class="c-str">"dados/municipios.geojson"</span>, <span class="c-str">"municipios.geojson"</span>)
 <span class="c-kw">for</span> o <span class="c-kw">in</span> s3pe.<span class="c-cmd">list_s3</span>(<span class="c-str">"dados/"</span>):
     print(o.size, o.key)</code></pre></div></div>
         <div><p class="lang">Rust · cargo add s3pe</p><div class="panel">
 <pre><code><span class="c-kw">let</span> s3 = s3pe::<span class="c-ty">Client</span>::<span class="c-cmd">builder</span>()
     .<span class="c-cmd">endpoint</span>(<span class="c-str">"https://s3.pe.gov.br"</span>)   <span class="c-cmt">// ou S3PE_ENDPOINT</span>
-    .<span class="c-cmd">bucket</span>(<span class="c-str">"iaempe"</span>)
+    .<span class="c-cmd">bucket</span>(<span class="c-str">"meu-bucket"</span>)
     .<span class="c-cmd">build</span>()?;                          <span class="c-cmt">// credenciais do ambiente</span>
-<span class="c-kw">let</span> meta = s3.<span class="c-cmd">read</span>(<span class="c-str">"dados/metadata.json"</span>)?;
-s3.<span class="c-cmd">upload</span>(<span class="c-str">"painel.parquet"</span>, <span class="c-str">"etl/painel_iaempe.parquet"</span>, <span class="c-ty">None</span>)?;
-<span class="c-kw">for</span> o <span class="c-kw">in</span> s3.<span class="c-cmd">list</span>(<span class="c-str">"s3://horizonte-fiscal/series/estado/"</span>)? {
+<span class="c-kw">let</span> meta = s3.<span class="c-cmd">read</span>(<span class="c-str">"dados/manifesto.json"</span>)?;
+s3.<span class="c-cmd">upload</span>(<span class="c-str">"painel.parquet"</span>, <span class="c-str">"etl/painel.parquet"</span>, <span class="c-ty">None</span>)?;
+<span class="c-kw">for</span> o <span class="c-kw">in</span> s3.<span class="c-cmd">list</span>(<span class="c-str">"s3://outro-bucket/series/"</span>)? {
     println!(<span class="c-str">"{:&gt;8} {}"</span>, o.size, o.key);
 }</code></pre></div></div>
         <div><p class="lang">Go · go get github.com/StrategicProjects/s3pe</p><div class="panel">
 <pre><code>s3, err := s3pe.<span class="c-cmd">New</span>(s3pe.<span class="c-ty">Config</span>{
-    Endpoint: <span class="c-str">"https://s3.pe.gov.br"</span>, Bucket: <span class="c-str">"iaempe"</span>,
+    Endpoint: <span class="c-str">"https://s3.pe.gov.br"</span>, Bucket: <span class="c-str">"meu-bucket"</span>,
 })
-meta, err := s3.<span class="c-cmd">Read</span>(ctx, <span class="c-str">"dados/metadata.json"</span>)
+meta, err := s3.<span class="c-cmd">Read</span>(ctx, <span class="c-str">"dados/manifesto.json"</span>)
 objects, err := s3.<span class="c-cmd">List</span>(ctx, <span class="c-str">"dados/"</span>)
 _, err = s3.<span class="c-cmd">Download</span>(ctx,
-    <span class="c-str">"s3://horizonte-fiscal/series/estado/icms.csv.gz"</span>, <span class="c-str">"icms.csv.gz"</span>)
+    <span class="c-str">"s3://outro-bucket/series/icms.csv.gz"</span>, <span class="c-str">"icms.csv.gz"</span>)
 <span class="c-kw">if</span> errors.<span class="c-cmd">Is</span>(err, s3pe.ErrNotFound) { <span class="c-cmt">/* ... */</span> }</code></pre></div></div>
       </div>
       <div class="panel" style="margin-top:18px"><h4>Publicar um lote · sync com manifesto por último (R e shell)</h4>
-<pre><code><span class="c-cmd">sync_up_s3</span>(<span class="c-str">"output/painel"</span>, <span class="c-str">"s3://iaempe/etl/"</span>, last = <span class="c-str">"manifest.json"</span>)
-<span class="c-ok">✔ sync output/painel → s3://iaempe/etl/: 3 uploaded, 28 unchanged, 0 deleted (2.1 s)</span>
-<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> sync output/painel s3://iaempe/etl/ --last manifest.json
-<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> sync s3://iaempe/dados/ ./dados-local      <span class="c-cmt"># espelho local do lote</span>
+<pre><code><span class="c-cmd">sync_up_s3</span>(<span class="c-str">"output/painel"</span>, <span class="c-str">"s3://meu-bucket/etl/"</span>, last = <span class="c-str">"manifest.json"</span>)
+<span class="c-ok">✔ sync output/painel → s3://meu-bucket/etl/: 3 uploaded, 28 unchanged, 0 deleted (2.1 s)</span>
+<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> sync output/painel s3://meu-bucket/etl/ --last manifest.json
+<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> sync s3://meu-bucket/dados/ ./dados-local      <span class="c-cmt"># espelho local do lote</span>
 <span class="c-cmt"># link temporário para quem não tem credencial</span>
-<span class="c-cmd">presign_s3</span>(<span class="c-str">"etl/painel_iaempe.parquet"</span>, expires = <span class="c-flag">3600</span>)</code></pre>
+<span class="c-cmd">presign_s3</span>(<span class="c-str">"etl/painel.parquet"</span>, expires = <span class="c-flag">3600</span>)</code></pre>
       </div>
       <div class="panel" style="margin-top:18px"><h4>Linha de comando · cargo install s3pe</h4>
 <pre><code><span class="c-prompt">$</span> <span class="c-cmd">export</span> S3PE_ENDPOINT=https://s3.pe.gov.br
 <span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> buckets
-<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> ls -l s3://iaempe/dados/
-<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> cat s3://iaempe/dados/metadata.json | jq .ultimo_mes
-<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> get s3://horizonte-fiscal/series/estado/icms.csv.gz
-<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> put painel.parquet s3://iaempe/etl/
-<span class="c-ok">↑ painel.parquet → s3://iaempe/etl/painel.parquet (12.3 MB, 0.8 s)</span></code></pre>
+<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> ls -l s3://meu-bucket/dados/
+<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> cat s3://meu-bucket/dados/manifesto.json | jq .gerado_em
+<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> get s3://outro-bucket/series/icms.csv.gz
+<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> put painel.parquet s3://meu-bucket/etl/
+<span class="c-ok">↑ painel.parquet → s3://meu-bucket/etl/painel.parquet (12.3 MB, 0.8 s)</span></code></pre>
       </div>
     </div>
   </section>

@@ -4,6 +4,8 @@ Exemplos, em R, Python, Rust, Go e linha de comando, de como ler e gravar
 dados no **s3.pe.gov.br**, o armazenamento de objetos S3 (um servidor
 [Garage](https://garagehq.deuxfleurs.fr)) da plataforma Condepe/Fidem do
 Estado de Pernambuco, usando o pacote genérico [s3pe](https://github.com/StrategicProjects/s3pe).
+Os nomes de bucket e as chaves são de cada projeto e não aparecem aqui:
+peça os seus a quem administra a plataforma.
 
 **Site:** <https://strategicprojects.github.io/s3pe-pernambuco/>
 
@@ -22,39 +24,37 @@ leitura anônima**. Nunca deixe a chave em script ou repositório. A região
 de assinatura é a padrão, `us-east-1`. Dentro do próprio servidor da
 plataforma o endpoint é local: `S3PE_ENDPOINT=http://127.0.0.1:9003`.
 
-## Buckets publicados
+## Buckets
 
-| Bucket | O que tem | Chave de leitura |
-|---|---|---|
-| `iaempe` | o lote do dashboard do IAEM-PE sob `dados/` (JSON e GeoJSON, `metadata.json` por último) e o painel do ETL sob `etl/` (Parquet, `manifest.json` por último) | `iaempe-leitura` |
-| `horizonte-fiscal` | séries fiscais sob `series/estado/<codigo>.csv.gz` e `series/municipios/<ibge>/<codigo>.csv.gz`, previsões sob `previsoes/<ibge>/<codigo>/ultima.json`, `manifest.json` por último | `horizonte-fiscal-leitura` |
-| `sds` | bucket do projeto SDS, criado em 2026-10-24 para testes com o s3pe; sem layout definido ainda | `sds-leitura` (leitura) e `sds` (leitura e escrita) |
+Cada projeto tem o seu bucket e a sua chave (de leitura, ou de leitura e
+escrita), criados por quem administra a plataforma: peça o nome do bucket e
+a chave do seu projeto. Os exemplos abaixo usam `meu-bucket`.
 
-**Regra do manifesto:** o `metadata.json` / `manifest.json` é sempre o
-último objeto a subir. Se a data dele é T, tudo o que ele lista já estava
-no bucket em T. Leia-o primeiro, use a data como versão do lote e a lista
-dele em vez de listar o bucket.
+**Regra do manifesto:** nos lotes publicados pela plataforma, o
+`manifest.json` (ou `metadata.json`) é sempre o último objeto a subir. Se a
+data dele é T, tudo o que ele lista já estava no bucket em T. Leia-o
+primeiro, use a data como versão do lote e a lista dele em vez de listar o
+bucket.
 
 ## R
 
 ```r
 library(s3pe)
 use_endpoint("https://s3.pe.gov.br")    # ou S3PE_ENDPOINT no ~/.Renviron
-use_bucket("iaempe")
+use_bucket("meu-bucket")
 
-meta       <- read_s3("dados/metadata.json")        # lista; meta$ultimo_mes
+meta       <- read_s3("dados/manifesto.json")       # lista
 series     <- read_s3("dados/series.json")
-municipios <- read_s3("dados/pe_municipios.geojson") # sf
-painel     <- read_s3("etl/painel_iaempe.parquet")   # tibble (nanoparquet)
+municipios <- read_s3("dados/municipios.geojson")  # sf
+painel     <- read_s3("etl/painel.parquet")          # tibble (nanoparquet)
 list_s3("dados/")
 
-# Horizonte Fiscal: chaves completas quando há mais de um bucket
-manifest <- read_s3("s3://horizonte-fiscal/manifest.json")
-icms     <- read_s3("s3://horizonte-fiscal/series/estado/icms.csv.gz")
-fpm      <- read_s3("s3://horizonte-fiscal/series/municipios/2611606/fpm.csv.gz")
-prev     <- read_s3("s3://horizonte-fiscal/previsoes/26/icms/ultima.json")
+# chaves completas quando há mais de um bucket
+manifest <- read_s3("s3://outro-bucket/manifest.json")
+icms     <- read_s3("s3://outro-bucket/series/icms.csv.gz")
+prev     <- read_s3("s3://outro-bucket/previsoes/icms/ultima.json")
 
-# escrita (chave com permissão de escrita; use um prefixo seu, não dados/)
+# escrita (chave com permissão de escrita; use um prefixo seu)
 write_s3(painel, "nota_tecnica/painel.parquet")
 upload_s3("figura1.png", "nota_tecnica/")
 ```
@@ -64,12 +64,12 @@ upload_s3("figura1.png", "nota_tecnica/")
 ```python
 import s3pe   # pip install "s3pe[pandas]"
 
-s3pe.configure(endpoint="https://s3.pe.gov.br", bucket="iaempe")
-meta   = s3pe.read_s3("dados/metadata.json")          # dict
-painel = s3pe.read_s3("etl/painel_iaempe.parquet")    # DataFrame
-icms   = s3pe.read_s3("s3://horizonte-fiscal/series/estado/icms.csv.gz")
+s3pe.configure(endpoint="https://s3.pe.gov.br", bucket="meu-bucket")
+meta   = s3pe.read_s3("dados/manifesto.json")          # dict
+painel = s3pe.read_s3("etl/painel.parquet")           # DataFrame
+icms   = s3pe.read_s3("s3://outro-bucket/series/icms.csv.gz")
 s3pe.write_s3(painel, "nota_tecnica/painel.csv")
-s3pe.download_s3("dados/pe_municipios.geojson", "pe.geojson")
+s3pe.download_s3("dados/municipios.geojson", "municipios.geojson")
 ```
 
 ## Rust
@@ -77,17 +77,17 @@ s3pe.download_s3("dados/pe_municipios.geojson", "pe.geojson")
 ```rust
 let s3 = s3pe::Client::builder()
     .endpoint("https://s3.pe.gov.br")   // ou S3PE_ENDPOINT
-    .bucket("iaempe")
+    .bucket("meu-bucket")
     .build()?;                          // credenciais do ambiente
-let meta = s3.read("dados/metadata.json")?;
-s3.upload("painel.parquet", "etl/painel_iaempe.parquet", None)?;
+let meta = s3.read("dados/manifesto.json")?;
+s3.upload("painel.parquet", "etl/painel.parquet", None)?;
 ```
 
 ## Go
 
 ```go
-s3, err := s3pe.New(s3pe.Config{Endpoint: "https://s3.pe.gov.br", Bucket: "iaempe"})
-meta, err := s3.Read(ctx, "dados/metadata.json")
+s3, err := s3pe.New(s3pe.Config{Endpoint: "https://s3.pe.gov.br", Bucket: "meu-bucket"})
+meta, err := s3.Read(ctx, "dados/manifesto.json")
 objects, err := s3.List(ctx, "dados/")
 ```
 
@@ -97,17 +97,17 @@ O que os scripts de publicação fazem na mão (subir o que mudou, manifesto no
 fim), o `sync` faz por ETag, nas quatro linguagens e na CLI:
 
 ```r
-sync_up_s3("output/painel", "s3://iaempe/etl/", last = "manifest.json")
+sync_up_s3("output/painel", "s3://meu-bucket/etl/", last = "manifest.json")
 ```
 
 ```bash
-s3pe sync output/painel s3://iaempe/etl/ --last manifest.json
-s3pe sync s3://iaempe/dados/ ./dados-local          # espelho local do lote
+s3pe sync output/painel s3://meu-bucket/etl/ --last manifest.json
+s3pe sync s3://meu-bucket/dados/ ./dados-local          # espelho local do lote
 ```
 
 Arquivos grandes sobem em partes automaticamente (acima de 64 MiB). Para
 compartilhar um objeto com quem não tem credencial:
-`presign_s3("etl/painel_iaempe.parquet", expires = 3600)` gera um link
+`presign_s3("etl/painel.parquet", expires = 3600)` gera um link
 temporário.
 
 ## Linha de comando
@@ -116,10 +116,10 @@ temporário.
 cargo install s3pe
 export S3PE_ENDPOINT=https://s3.pe.gov.br
 s3pe buckets
-s3pe ls -l s3://iaempe/dados/
-s3pe cat s3://iaempe/dados/metadata.json | jq .ultimo_mes
-s3pe get s3://horizonte-fiscal/series/estado/icms.csv.gz
-s3pe put painel.parquet s3://iaempe/etl/
+s3pe ls -l s3://meu-bucket/dados/
+s3pe cat s3://meu-bucket/dados/manifesto.json | jq .gerado_em
+s3pe get s3://outro-bucket/series/icms.csv.gz
+s3pe put painel.parquet s3://meu-bucket/etl/
 ```
 
 ## Problemas conhecidos
