@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>s3pe no s3.pe.gov.br — exemplos em R, Python, Rust, Go e shell</title>
+<meta name="description" content="Como ler e gravar dados no s3.pe.gov.br, o armazenamento de objetos S3 da plataforma Condepe/Fidem de Pernambuco, com o pacote s3pe em R, Python, Rust, Go e linha de comando." />
+<meta property="og:title" content="s3pe no s3.pe.gov.br" />
+<meta property="og:description" content="Credenciais, buckets publicados, regra do manifesto e exemplos nas quatro linguagens." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://strategicprojects.github.io/s3pe-pernambuco/" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B5%3C/text%3E%3C/svg%3E" />
+<style>
+  :root { --bg: #0b1020; --bg-soft: #121a33; --card: #16203f; --border: #263457; --fg: #e8edf7; --muted: #9fb0d0; --brand: #2e9e5b; --brand-2: #29c7ac; --accent: #ffb14e; --code-bg: #0d1428; --shadow: 0 12px 40px rgba(0,0,0,.35); --radius: 16px; --maxw: 1080px; }
+  @media (prefers-color-scheme: light) { :root { --bg: #f6f8fe; --bg-soft: #eef2fb; --card: #ffffff; --border: #dbe3f4; --fg: #10192e; --muted: #56648a; --code-bg: #0d1428; --shadow: 0 12px 36px rgba(30,45,90,.12); } }
+  * { box-sizing: border-box; } html { scroll-behavior: smooth; }
+  body { margin: 0; font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: var(--fg); background: radial-gradient(1100px 600px at 12% -8%, color-mix(in srgb, var(--brand) 22%, transparent), transparent 60%), radial-gradient(900px 500px at 96% 4%, rgba(41,199,172,.16), transparent 55%), var(--bg); -webkit-font-smoothing: antialiased; }
+  a { color: var(--brand-2); text-decoration: none; } a:hover { text-decoration: underline; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 22px; }
+  header.nav { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); background: color-mix(in srgb, var(--bg) 78%, transparent); border-bottom: 1px solid var(--border); }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 62px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -.02em; font-size: 1.1rem; } .brand .logo { font-size: 1.35rem; }
+  .nav-links { display: flex; gap: 22px; align-items: center; } .nav-links a { color: var(--muted); font-weight: 600; font-size: .95rem; } .nav-links a:hover { color: var(--fg); text-decoration: none; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: .95rem; border: 1px solid var(--border); color: var(--fg); background: var(--card); transition: transform .12s ease, box-shadow .12s ease; }
+  .btn:hover { text-decoration: none; transform: translateY(-1px); box-shadow: var(--shadow); } .btn.primary { background: linear-gradient(135deg, var(--brand), #5b73ff); color: #fff; border: none; }
+  @media (max-width: 720px) { .nav-links a.hide-sm { display: none; } }
+  .hero { padding: 74px 0 40px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--brand-2); background: color-mix(in srgb, var(--brand-2) 14%, transparent); border: 1px solid color-mix(in srgb, var(--brand-2) 30%, transparent); padding: 6px 12px; border-radius: 999px; }
+  h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1.05; letter-spacing: -.03em; margin: 18px 0 14px; } h1 .grad { background: linear-gradient(120deg, var(--brand), var(--brand-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead { font-size: 1.18rem; color: var(--muted); max-width: 46ch; } .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 26px; } .badges img { height: 22px; } .cta { display: flex; flex-wrap: wrap; gap: 12px; }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: center; } @media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } }
+  .term { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+  .term-bar { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.07); } .dot { width: 12px; height: 12px; border-radius: 50%; } .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
+  .term-title { margin-left: 8px; color: #7f8bb0; font: 600 .82rem ui-monospace, monospace; }
+  pre { margin: 0; padding: 18px 18px 22px; overflow-x: auto; } code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .88rem; } pre code { color: #d7e0f5; }
+  .c-prompt { color: #6ee7c8; } .c-flag { color: #ffb14e; } .c-cmd { color: #8ea2ff; } .c-cmt { color: #6b779b; } .c-ok { color: #59d99a; } .c-str { color: #ffb14e; } .c-ty { color: #6ee7c8; } .c-kw { color: #c9a5ff; }
+  section { padding: 56px 0; } section.alt { background: var(--bg-soft); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  h2 { font-size: clamp(1.6rem, 3.4vw, 2.2rem); letter-spacing: -.02em; margin: 0 0 8px; } .sub { color: var(--muted); margin: 0 0 30px; max-width: 62ch; }
+  .grid { display: grid; gap: 18px; } .grid.f3 { grid-template-columns: repeat(3, 1fr); } .grid.f2 { grid-template-columns: repeat(2, 1fr); } @media (max-width: 860px) { .grid.f3, .grid.f2 { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease; }
+  .card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: color-mix(in srgb, var(--brand) 40%, var(--border)); }
+  .card .ic { font-size: 1.5rem; } .card h3 { margin: 12px 0 6px; font-size: 1.1rem; letter-spacing: -.01em; } .card p { margin: 0; color: var(--muted); font-size: .96rem; }
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; } .pill { font: 600 .82rem ui-monospace, monospace; padding: 6px 11px; border-radius: 999px; background: color-mix(in srgb, var(--brand) 12%, transparent); border: 1px solid color-mix(in srgb, var(--brand) 26%, transparent); color: var(--fg); }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; } @media (max-width: 860px) { .steps { grid-template-columns: 1fr 1fr; } }
+  .step { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; } .step .n { font: 800 .8rem ui-monospace, monospace; color: var(--brand-2); } .step h4 { margin: 6px 0 4px; font-size: 1rem; } .step p { margin: 0; color: var(--muted); font-size: .9rem; }
+  .panel { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; } .note { color: var(--muted); font-size: .9rem; margin-top: 10px; }
+  .diagram { background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); overflow-x: auto; } .diagram img { display: block; width: 100%; max-width: 960px; height: auto; margin: 0 auto; }
+  table.cmp { width: 100%; border-collapse: collapse; font-size: .94rem; } table.cmp th, table.cmp td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; } table.cmp th { color: var(--muted); font-weight: 700; }
+  table.cmp code { background: color-mix(in srgb, var(--brand) 12%, transparent); padding: 2px 6px; border-radius: 6px; font-size: .86rem; color: var(--fg); } .scroll { overflow-x: auto; }
+  footer { padding: 40px 0 60px; color: var(--muted); border-top: 1px solid var(--border); } .foot-inner { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; } .foot-links { display: flex; gap: 18px; flex-wrap: wrap; }
+
+  .tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  @media (max-width: 860px) { .tabs { grid-template-columns: 1fr; } }
+  .lang { margin: 0 0 8px; font: 800 .85rem ui-monospace, monospace; color: var(--brand-2); letter-spacing: .06em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-inner">
+    <div class="brand"><span class="logo">🌵</span> s3pe <span style="color:var(--muted);font-weight:600">· s3.pe.gov.br</span></div>
+    <nav class="nav-links">
+      <a class="hide-sm" href="#credenciais">Credenciais</a>
+      <a class="hide-sm" href="#buckets">Buckets</a>
+      <a class="hide-sm" href="#exemplos">Exemplos</a>
+      <a class="hide-sm" href="#problemas">Problemas</a>
+      <a class="hide-sm" href="https://strategicprojects.github.io/s3pe/">O pacote s3pe</a>
+      <a class="btn" href="https://github.com/StrategicProjects/s3pe-pernambuco">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">◆ Pernambuco · dados em S3</span>
+        <h1>Os dados da plataforma, <span class="grad">em uma linha</span>.</h1>
+        <p class="lead">O <strong>s3.pe.gov.br</strong> é o armazenamento de objetos S3 (um servidor Garage) da plataforma Condepe/Fidem. Esta página mostra como consumi-lo com o pacote <a href="https://strategicprojects.github.io/s3pe/">s3pe</a> em R, Python, Rust, Go e na linha de comando.</p>
+        <div class="cta">
+          <a class="btn primary" href="#exemplos">Ver exemplos →</a>
+          <a class="btn" href="https://strategicprojects.github.io/s3pe/r/">Pacote R</a>
+          <a class="btn" href="https://strategicprojects.github.io/s3pe/python/">Pacote Python</a>
+        </div>
+      </div>
+      <div class="term" aria-hidden="true">
+        <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">R</span></div>
+<pre><code><span class="c-kw">library</span>(s3pe)
+<span class="c-cmd">use_endpoint</span>(<span class="c-str">"https://s3.pe.gov.br"</span>)
+<span class="c-cmd">use_bucket</span>(<span class="c-str">"iaempe"</span>)
+<span class="c-ok">✔ Default bucket: s3://iaempe/</span>
+
+meta &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"dados/metadata.json"</span>)
+<span class="c-ok">↓ s3://iaempe/dados/metadata.json (1.2 kB, 0.2 s)</span>
+meta$ultimo_mes
+<span class="c-cmt">#&gt; [1] 202608</span>
+
+icms &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/series/estado/icms.csv.gz"</span>)
+<span class="c-ok">↓ s3://horizonte-fiscal/series/estado/icms.csv.gz (4.1 kB, 0.2 s)</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="credenciais" class="alt">
+    <div class="wrap">
+      <h2>Credenciais</h2>
+      <p class="sub">Três variáveis de ambiente. Não há leitura anônima: cada projeto tem um bucket e uma chave próprios, pedidos a quem administra a plataforma. A chave de leitura basta para consumir; a de escrita é do ETL que publica.</p>
+      <div class="grid f2">
+        <div>
+          <div class="panel"><h4>~/.Renviron (R) · .env ou export (shell)</h4>
+<pre><code>S3PE_ENDPOINT=https://s3.pe.gov.br
+AWS_ACCESS_KEY_ID=GK...
+AWS_SECRET_ACCESS_KEY=...
+<span class="c-cmt"># S3PE_BUCKET=iaempe             opcional: chaves sem s3://</span>
+<span class="c-cmt"># dentro do servidor da plataforma:</span>
+<span class="c-cmt"># S3PE_ENDPOINT=http://127.0.0.1:9003</span></code></pre>
+          </div>
+          <p class="note">Reinicie a sessão do R depois de editar o <code>~/.Renviron</code>. Nunca deixe a chave em script, em <code>.Rprofile</code> versionado ou em repositório. A região de assinatura é a padrão, <code>us-east-1</code>.</p>
+        </div>
+        <div class="grid" style="gap:14px">
+          <div class="card"><div class="ic">🔑</div><h3>Chaves começam com GK</h3><p>São chaves do Garage. Uma chave por projeto, com leitura, ou leitura e escrita, no bucket do projeto. <code>s3pe buckets</code> mostra o que a sua chave enxerga.</p></div>
+          <div class="card"><div class="ic">🧭</div><h3>Rede</h3><p>Da internet e das máquinas de desenvolvimento funciona direto. Redes internas do Estado podem exigir liberação de firewall para <code>s3.pe.gov.br:443</code>; o sintoma é timeout, não erro de credencial.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="buckets">
+    <div class="wrap">
+      <h2>Buckets publicados</h2>
+      <p class="sub"><strong>Regra do manifesto:</strong> o <code>metadata.json</code> ou <code>manifest.json</code> é sempre o último objeto a subir. Se a data dele é T, tudo o que ele lista já estava no bucket em T. Leia-o primeiro, use a data como versão do lote e a lista dele em vez de listar o bucket.</p>
+      <div class="scroll"><table class="cmp">
+        <thead><tr><th>Bucket</th><th>Layout</th><th>Marcador de lote</th></tr></thead>
+        <tbody>
+          <tr><td><code>iaempe</code></td><td><code>dados/</code>: os JSON e GeoJSON do dashboard do IAEM-PE (séries, ranking, municípios)<br><code>etl/</code>: <code>painel_iaempe.parquet</code>, <code>catalogo_iaempe.parquet</code></td><td><code>dados/metadata.json</code> (<code>ultimo_mes</code>)<br><code>etl/manifest.json</code></td></tr>
+          <tr><td><code>horizonte-fiscal</code></td><td><code>series/estado/&lt;codigo&gt;.csv.gz</code> (Estado e macro), <code>series/municipios/&lt;ibge&gt;/&lt;codigo&gt;.csv.gz</code><br><code>previsoes/&lt;ibge&gt;/&lt;codigo&gt;/ultima.json</code> e <code>&lt;AAAA-MM-DD&gt;.json</code></td><td><code>manifest.json</code> (<code>gerado_em</code>, lista de séries)</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Séries do Horizonte Fiscal: CSV gzip com <code>competencia,valor,origem,previa</code>, uma linha por mês. Códigos (<code>icms</code>, <code>fpe</code>, <code>fpm</code>, <code>ipca</code>, …) e unidades estão no manifesto. O código IBGE do Estado é 26; municípios têm 7 dígitos (Recife, 2611606).</p>
+    </div>
+  </section>
+
+  <section id="exemplos" class="alt">
+    <div class="wrap">
+      <h2>Exemplos</h2>
+      <p class="sub">O formato vem da extensão: JSON vira lista/dict, CSV e Parquet viram tibble/DataFrame, GeoJSON vira sf no R. Com o bucket padrão definido, as chaves ficam curtas; para um segundo bucket, use a URL <code>s3://bucket/chave</code>.</p>
+      <div class="tabs">
+        <div><p class="lang">R · install.packages("s3pe")</p><div class="panel">
+<pre><code><span class="c-kw">library</span>(s3pe)
+<span class="c-cmd">use_endpoint</span>(<span class="c-str">"https://s3.pe.gov.br"</span>)
+<span class="c-cmd">use_bucket</span>(<span class="c-str">"iaempe"</span>)
+
+meta       &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"dados/metadata.json"</span>)
+series     &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"dados/series.json"</span>)
+municipios &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"dados/pe_municipios.geojson"</span>)  <span class="c-cmt"># sf</span>
+painel     &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"etl/painel_iaempe.parquet"</span>)    <span class="c-cmt"># tibble</span>
+<span class="c-cmd">list_s3</span>(<span class="c-str">"dados/"</span>)
+
+<span class="c-cmt"># Horizonte Fiscal</span>
+manifest &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/manifest.json"</span>)
+icms &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/series/estado/icms.csv.gz"</span>)
+fpm  &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/series/municipios/2611606/fpm.csv.gz"</span>)
+prev &lt;- <span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/previsoes/26/icms/ultima.json"</span>)
+
+<span class="c-cmt"># escrita: chave com permissão, num prefixo seu</span>
+<span class="c-cmd">write_s3</span>(painel, <span class="c-str">"nota_tecnica/painel.parquet"</span>)
+<span class="c-cmd">upload_s3</span>(<span class="c-str">"figura1.png"</span>, <span class="c-str">"nota_tecnica/"</span>)</code></pre></div></div>
+        <div><p class="lang">Python · pip install "s3pe[pandas]"</p><div class="panel">
+<pre><code><span class="c-kw">import</span> s3pe
+
+s3pe.<span class="c-cmd">configure</span>(endpoint=<span class="c-str">"https://s3.pe.gov.br"</span>, bucket=<span class="c-str">"iaempe"</span>)
+meta   = s3pe.<span class="c-cmd">read_s3</span>(<span class="c-str">"dados/metadata.json"</span>)        <span class="c-cmt"># dict</span>
+painel = s3pe.<span class="c-cmd">read_s3</span>(<span class="c-str">"etl/painel_iaempe.parquet"</span>)  <span class="c-cmt"># DataFrame</span>
+icms   = s3pe.<span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/series/estado/icms.csv.gz"</span>)
+prev   = s3pe.<span class="c-cmd">read_s3</span>(<span class="c-str">"s3://horizonte-fiscal/previsoes/26/icms/ultima.json"</span>)
+
+s3pe.<span class="c-cmd">write_s3</span>(painel, <span class="c-str">"nota_tecnica/painel.csv"</span>)
+s3pe.<span class="c-cmd">download_s3</span>(<span class="c-str">"dados/pe_municipios.geojson"</span>, <span class="c-str">"pe.geojson"</span>)
+<span class="c-kw">for</span> o <span class="c-kw">in</span> s3pe.<span class="c-cmd">list_s3</span>(<span class="c-str">"dados/"</span>):
+    print(o.size, o.key)</code></pre></div></div>
+        <div><p class="lang">Rust · cargo add s3pe</p><div class="panel">
+<pre><code><span class="c-kw">let</span> s3 = s3pe::<span class="c-ty">Client</span>::<span class="c-cmd">builder</span>()
+    .<span class="c-cmd">endpoint</span>(<span class="c-str">"https://s3.pe.gov.br"</span>)   <span class="c-cmt">// ou S3PE_ENDPOINT</span>
+    .<span class="c-cmd">bucket</span>(<span class="c-str">"iaempe"</span>)
+    .<span class="c-cmd">build</span>()?;                          <span class="c-cmt">// credenciais do ambiente</span>
+<span class="c-kw">let</span> meta = s3.<span class="c-cmd">read</span>(<span class="c-str">"dados/metadata.json"</span>)?;
+s3.<span class="c-cmd">upload</span>(<span class="c-str">"painel.parquet"</span>, <span class="c-str">"etl/painel_iaempe.parquet"</span>, <span class="c-ty">None</span>)?;
+<span class="c-kw">for</span> o <span class="c-kw">in</span> s3.<span class="c-cmd">list</span>(<span class="c-str">"s3://horizonte-fiscal/series/estado/"</span>)? {
+    println!(<span class="c-str">"{:&gt;8} {}"</span>, o.size, o.key);
+}</code></pre></div></div>
+        <div><p class="lang">Go · go get github.com/StrategicProjects/s3pe</p><div class="panel">
+<pre><code>s3, err := s3pe.<span class="c-cmd">New</span>(s3pe.<span class="c-ty">Config</span>{
+    Endpoint: <span class="c-str">"https://s3.pe.gov.br"</span>, Bucket: <span class="c-str">"iaempe"</span>,
+})
+meta, err := s3.<span class="c-cmd">Read</span>(ctx, <span class="c-str">"dados/metadata.json"</span>)
+objects, err := s3.<span class="c-cmd">List</span>(ctx, <span class="c-str">"dados/"</span>)
+_, err = s3.<span class="c-cmd">Download</span>(ctx,
+    <span class="c-str">"s3://horizonte-fiscal/series/estado/icms.csv.gz"</span>, <span class="c-str">"icms.csv.gz"</span>)
+<span class="c-kw">if</span> errors.<span class="c-cmd">Is</span>(err, s3pe.ErrNotFound) { <span class="c-cmt">/* ... */</span> }</code></pre></div></div>
+      </div>
+      <div class="panel" style="margin-top:18px"><h4>Linha de comando · cargo install s3pe</h4>
+<pre><code><span class="c-prompt">$</span> <span class="c-cmd">export</span> S3PE_ENDPOINT=https://s3.pe.gov.br
+<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> buckets
+<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> ls -l s3://iaempe/dados/
+<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> cat s3://iaempe/dados/metadata.json | jq .ultimo_mes
+<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> get s3://horizonte-fiscal/series/estado/icms.csv.gz
+<span class="c-prompt">$</span> <span class="c-cmd">s3pe</span> put painel.parquet s3://iaempe/etl/
+<span class="c-ok">↑ painel.parquet → s3://iaempe/etl/painel.parquet (12.3 MB, 0.8 s)</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="problemas">
+    <div class="wrap">
+      <h2>Problemas conhecidos</h2>
+      <div class="grid f2">
+        <div class="card"><h3>403 SignatureDoesNotMatch</h3><p>Credencial errada no ambiente (a chave começa com <code>GK</code>; confira com <code>Sys.getenv("AWS_ACCESS_KEY_ID")</code>) ou região diferente de <code>us-east-1</code>.</p></div>
+        <div class="card"><h3>403 AccessDenied</h3><p>A chave não tem permissão para este bucket, ou é só de leitura e você tentou gravar.</p></div>
+        <div class="card"><h3>Timeout</h3><p>A máquina não alcança <code>s3.pe.gov.br:443</code>: rede interna sem liberação de firewall, ou sem saída para a internet.</p></div>
+        <div class="card"><h3>ConfigError: no endpoint</h3><p>Falta <code>S3PE_ENDPOINT</code> (ou <code>use_endpoint()</code>, <code>configure(endpoint=)</code>): o s3pe não assume nenhum servidor.</p></div>
+      </div>
+      <p class="note">O lote do bucket pode estar um dia atrás da fonte: os espelhos rodam de madrugada. Compare a data do manifesto antes de concluir que algo falta.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div>Feito em Pernambuco 🌵 · MIT · André Leite e autores do s3pe</div>
+    <div class="foot-links">
+      <a href="https://github.com/StrategicProjects/s3pe-pernambuco">GitHub</a>
+      <a href="https://strategicprojects.github.io/s3pe/">s3pe</a>
+      <a href="https://strategicprojects.github.io/s3pe/r/">R</a>
+      <a href="https://strategicprojects.github.io/s3pe/python/">Python</a>
+      <a href="https://strategicprojects.github.io/s3pe/rust/">Rust</a>
+      <a href="https://strategicprojects.github.io/s3pe/go/">Go</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
